@@ -4,3 +4,5 @@ node_modules/
 .env
 .netlify/
 dist/
+# Google App Engine generated folder
+appengine-generated/
