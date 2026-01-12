@@ -1,0 +1,24 @@
+{
+    "name": "3d-print-mansoft",
+    "version": "1.0.0",
+    "description": "3D Printing Spec System - Financial analysis tool for 3D printed products",
+    "main": "index.html",
+    "scripts": {
+        "dev": "npx serve .",
+        "build": "echo 'No build step required for static site'"
+    },
+    "keywords": [
+        "3d-printing",
+        "cost-calculator",
+        "filament",
+        "profitability"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "jspdf": "^2.5.1"
+    },
+    "devDependencies": {
+        "serve": "^14.2.1"
+    }
+}

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="3D Printing Spec System - Financial analysis tool for 3D printed products">
+  <title>3D Print ManSoft - Spec System</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <div class="logo-icon">🖨️</div>
+        <div class="logo-text">3D Print ManSoft</div>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+        <button class="nav-btn" data-section="filaments">Filaments</button>
+        <button class="nav-btn" data-section="products">Products</button>
+        <button class="nav-btn" data-section="reports">Reports</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="container">
+
+      <!-- Dashboard Section -->
+      <section id="dashboard" class="section active">
+        <h1>Dashboard</h1>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-filaments">0</div>
+            <div class="stat-label">Filament Spools</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-products">0</div>
+            <div class="stat-label">Products</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-total-value">R0</div>
+            <div class="stat-label">Total Inventory</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-avg-margin">0%</div>
+            <div class="stat-label">Avg. Margin</div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Recent Filaments</h3>
+            </div>
+            <div id="recent-filaments"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Recent Products</h3>
+            </div>
+            <div id="recent-products"></div>
+          </div>
+        </div>
+
+        <div class="card mt-2">
+          <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" onclick="navigateTo('filaments')">➕ Add Filament</button>
+            <button class="btn btn-primary" onclick="navigateTo('products')">➕ Add Product</button>
+            <button class="btn btn-secondary" onclick="navigateTo('reports')">📊 Generate Report</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filaments Section -->
+      <section id="filaments" class="section">
+        <div class="flex-between mb-2">
+          <h1>Filament Database</h1>
+          <button class="btn btn-primary" onclick="showAddFilamentForm()">➕ Add Filament</button>
+        </div>
+
+        <!-- Add Filament Form -->
+        <div id="add-filament-form" class="card mb-2 hidden">
+          <div class="card-header">
+            <h3 class="card-title">Add New Filament Spool</h3>
+          </div>
+          <form id="filament-form" onsubmit="saveFilament(event)">
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label class="form-label">Material Type *</label>
+                <select class="form-select" name="material" required>
+                  <option value="">Select material...</option>
+                  <option value="PLA">PLA</option>
+                  <option value="PETG">PETG</option>
+                  <option value="ABS">ABS</option>
+                  <option value="TPU">TPU</option>
+                  <option value="Nylon">Nylon</option>
+                  <option value="ASA">ASA</option>
+                  <option value="HIPS">HIPS</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Color *</label>
+                <input type="text" class="form-input" name="color" required placeholder="e.g., Black, White, Red">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Spool Size (g) *</label>
+                <input type="number" class="form-input" name="spoolSize" required placeholder="1000">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Purchase Price (ZAR) *</label>
+                <input type="number" class="form-input" name="price" required step="0.01" placeholder="300.00">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Diameter (mm) *</label>
+                <select class="form-select" name="diameter" required>
+                  <option value="1.75">1.75mm</option>
+                  <option value="2.85">2.85mm</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Supplier</label>
+                <input type="text" class="form-input" name="supplier" placeholder="e.g., Creality">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Print Temp Range (°C)</label>
+                <input type="text" class="form-input" name="tempRange" placeholder="e.g., 220-250">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Estimated Waste (%)</label>
+                <input type="number" class="form-input" name="waste" value="5" min="0" max="100">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea class="form-textarea" name="notes"
+                placeholder="Any observations about this filament..."></textarea>
+            </div>
+            <div class="flex gap-1">
+              <button type="submit" class="btn btn-success">💾 Save Filament</button>
+              <button type="button" class="btn btn-secondary" onclick="hideAddFilamentForm()">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Filaments List -->
+        <div id="filaments-list"></div>
+      </section>
+
+      <!-- Products Section -->
+      <section id="products" class="section">
+        <div class="flex-between mb-2">
+          <h1>Product Database</h1>
+          <button class="btn btn-primary" onclick="showAddProductForm()">➕ Add Product</button>
+        </div>
+
+        <!-- Add Product Form -->
+        <div id="add-product-form" class="card mb-2 hidden">
+          <div class="card-header">
+            <h3 class="card-title">Add New Product</h3>
+          </div>
+          <form id="product-form" onsubmit="saveProduct(event)">
+            <h4>Product Information</h4>
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label class="form-label">Product Name *</label>
+                <input type="text" class="form-input" name="name" required placeholder="e.g., 3D Printed Wallet">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select class="form-select" name="category">
+                  <option value="Accessories">Accessories</option>
+                  <option value="Functional">Functional</option>
+                  <option value="Decorative">Decorative</option>
+                  <option value="Tech">Tech</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <h4 class="mt-2">Dimensions & Specifications</h4>
+            <div class="grid grid-3">
+              <div class="form-group">
+                <label class="form-label">Length (mm)</label>
+                <input type="number" class="form-input" name="length" placeholder="90">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Width (mm)</label>
+                <input type="number" class="form-input" name="width" placeholder="110">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Height (mm)</label>
+                <input type="number" class="form-input" name="height" placeholder="8">
+              </div>
+            </div>
+
+            <h4 class="mt-2">Production Metrics</h4>
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label class="form-label">Filament Used (g) *</label>
+                <input type="number" class="form-input" name="filamentUsed" required step="0.1" placeholder="24">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Print Time (hours) *</label>
+                <input type="number" class="form-input" name="printTime" required step="0.1" placeholder="2">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Filament Type *</label>
+                <select class="form-select" name="filamentType" required id="product-filament-type">
+                  <option value="">Select filament...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Infill (%)</label>
+                <input type="number" class="form-input" name="infill" value="15" min="0" max="100">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Layer Height (mm)</label>
+                <input type="number" class="form-input" name="layerHeight" value="0.2" step="0.01">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Support Required</label>
+                <select class="form-select" name="supportRequired">
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                  <option value="Minimal">Minimal</option>
+                </select>
+              </div>
+            </div>
+
+            <h4 class="mt-2">Cost Assumptions</h4>
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label class="form-label">Energy Cost (ZAR)</label>
+                <input type="number" class="form-input" name="energyCost" value="2.00" step="0.01">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Labor Cost (ZAR)</label>
+                <input type="number" class="form-input" name="laborCost" value="50.00" step="0.01">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Packaging Cost (ZAR)</label>
+                <input type="number" class="form-input" name="packagingCost" value="8.00" step="0.01">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Shipping Cost (ZAR)</label>
+                <input type="number" class="form-input" name="shippingCost" value="25.00" step="0.01">
+              </div>
+            </div>
+
+            <h4 class="mt-2">Market Data</h4>
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label class="form-label">Target Selling Price (ZAR) *</label>
+                <input type="number" class="form-input" name="targetPrice" required step="0.01" placeholder="130.00">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Competitor Price Range</label>
+                <input type="text" class="form-input" name="competitorRange" placeholder="e.g., R120-R180">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea class="form-textarea" name="notes"
+                placeholder="Design insights, customer feedback..."></textarea>
+            </div>
+
+            <div class="flex gap-1">
+              <button type="submit" class="btn btn-success">💾 Save Product</button>
+              <button type="button" class="btn btn-secondary" onclick="hideAddProductForm()">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Products List -->
+        <div id="products-list"></div>
+      </section>
+
+      <!-- Reports Section -->
+      <section id="reports" class="section">
+        <h1>Generate Financial Report</h1>
+
+        <div class="card mb-2">
+          <div class="card-header">
+            <h3 class="card-title">Report Configuration</h3>
+          </div>
+          <form id="report-form" onsubmit="generateReport(event)">
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label class="form-label">Select Filament *</label>
+                <select class="form-select" name="filament" required id="report-filament">
+                  <option value="">Choose filament...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Select Product *</label>
+                <select class="form-select" name="product" required id="report-product">
+                  <option value="">Choose product...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Monthly Production (spools)</label>
+                <input type="number" class="form-input" name="monthlySpools" value="5" min="1">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">📊 Generate Report</button>
+          </form>
+        </div>
+
+        <!-- Report Output -->
+        <div id="report-output" class="hidden">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Financial Analysis Report</h3>
+              <button class="btn btn-success" onclick="exportToPDF()">📄 Export PDF</button>
+            </div>
+            <div id="report-content"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="sheets-integration.js"></script>
+  <script src="app.js"></script>
+  <script src="filament-manager.js"></script>
+  <script src="product-manager.js"></script>
+  <script src="calculator.js"></script>
+  <script src="report-generator.js"></script>
+</body>
+
+</html>
