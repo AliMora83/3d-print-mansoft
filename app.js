@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSampleData();
     updateDashboard();
 
+    // Initialize settings form if on settings page
+    if (document.getElementById('settings-form')) {
+        loadSettingsToForm();
+    }
+
     // Enable Google Sheets auto-sync if configured
     if (typeof enableAutoSync === 'function') {
         enableAutoSync();
@@ -24,6 +29,11 @@ function initializeApp() {
     }
     if (!localStorage.getItem('products')) {
         localStorage.setItem('products', JSON.stringify([]));
+    }
+
+    // Initialize settings
+    if (typeof initializeSettings === 'function') {
+        initializeSettings();
     }
 }
 
@@ -65,6 +75,8 @@ function navigateTo(sectionName) {
         updateProductFilamentDropdown();
     } else if (sectionName === 'reports') {
         updateReportDropdowns();
+    } else if (sectionName === 'settings') {
+        loadSettingsToForm();
     }
 }
 
@@ -153,7 +165,8 @@ function loadSampleData() {
             tempRange: '220-250',
             waste: 5,
             notes: 'Reliable material, consistent color, good layer adhesion',
-            dateAdded: new Date().toISOString()
+            dateAdded: new Date().toISOString(),
+            costPerGram: 300.00 / 1000
         };
         saveFilamentData(sampleFilament);
     }
@@ -206,7 +219,8 @@ function getProducts() {
 
 // Utility: Format currency
 function formatCurrency(value) {
-    return `R${parseFloat(value).toFixed(2)}`;
+    const symbol = getSetting('currencySymbol') || 'R';
+    return `${symbol}${parseFloat(value).toFixed(2)}`;
 }
 
 // Utility: Format percentage

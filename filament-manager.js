@@ -5,11 +5,55 @@
 function showAddFilamentForm() {
   document.getElementById('add-filament-form').classList.remove('hidden');
   document.getElementById('filament-form').reset();
+  document.querySelector('#add-filament-form .card-title').textContent = 'Add New Filament Spool';
+
+  // Remove any hidden ID input
+  const existingIdInput = document.getElementById('edit-filament-id');
+  if (existingIdInput) existingIdInput.remove();
+}
+
+// Edit filament
+function editFilament(id) {
+  const filaments = getFilaments();
+  const filament = filaments.find(f => f.id === id);
+  if (!filament) return;
+
+  showAddFilamentForm();
+  document.querySelector('#add-filament-form .card-title').textContent = 'Edit Filament Spool';
+
+  const form = document.getElementById('filament-form');
+
+  // Add hidden ID input
+  let idInput = document.getElementById('edit-filament-id');
+  if (!idInput) {
+    idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.id = 'edit-filament-id';
+    idInput.name = 'id';
+    form.appendChild(idInput);
+  }
+  idInput.value = filament.id;
+
+  // Populate form
+  form.elements['material'].value = filament.material;
+  form.elements['color'].value = filament.color;
+  form.elements['spoolSize'].value = filament.spoolSize;
+  form.elements['price'].value = filament.price;
+  form.elements['diameter'].value = filament.diameter;
+  form.elements['supplier'].value = filament.supplier || '';
+  form.elements['tempRange'].value = filament.tempRange || '';
+  form.elements['waste'].value = filament.waste || 5;
+  form.elements['notes'].value = filament.notes || '';
+
+  // Scroll to form
+  document.getElementById('add-filament-form').scrollIntoView({ behavior: 'smooth' });
 }
 
 // Hide add filament form
 function hideAddFilamentForm() {
   document.getElementById('add-filament-form').classList.add('hidden');
+  const existingIdInput = document.getElementById('edit-filament-id');
+  if (existingIdInput) existingIdInput.remove();
 }
 
 // Save filament (from form submission)
@@ -18,9 +62,10 @@ function saveFilament(event) {
 
   const form = event.target;
   const formData = new FormData(form);
+  const id = formData.get('id');
 
   const filament = {
-    id: generateId(),
+    id: id || generateId(),
     material: formData.get('material'),
     color: formData.get('color'),
     spoolSize: parseFloat(formData.get('spoolSize')),
@@ -30,7 +75,7 @@ function saveFilament(event) {
     tempRange: formData.get('tempRange') || '',
     waste: parseFloat(formData.get('waste') || 5),
     notes: formData.get('notes') || '',
-    dateAdded: new Date().toISOString()
+    dateAdded: id ? (getFilaments().find(f => f.id === id)?.dateAdded || new Date().toISOString()) : new Date().toISOString()
   };
 
   // Calculate cost per gram
@@ -51,8 +96,15 @@ function saveFilament(event) {
 
 // Save filament data to localStorage
 function saveFilamentData(filament) {
-  const filaments = getFilaments();
-  filaments.unshift(filament); // Add to beginning
+  let filaments = getFilaments();
+  const index = filaments.findIndex(f => f.id === filament.id);
+
+  if (index >= 0) {
+    filaments[index] = filament;
+  } else {
+    filaments.unshift(filament); // Add to beginning
+  }
+
   localStorage.setItem('filaments', JSON.stringify(filaments));
 }
 
@@ -100,11 +152,16 @@ function renderFilamentsList() {
 
 // Render single filament card
 function renderFilamentCard(filament) {
+  const currencySymbol = typeof getSetting === 'function' ? getSetting('currencySymbol') || 'R' : 'R';
+
   return `
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">${filament.material} - ${filament.color}</h3>
-        <button class="btn btn-danger" onclick="deleteFilament('${filament.id}')">🗑️</button>
+        <div class="flex gap-1">
+            <button class="btn btn-secondary" onclick="editFilament('${filament.id}')">✏️</button>
+            <button class="btn btn-danger" onclick="deleteFilament('${filament.id}')">🗑️</button>
+        </div>
       </div>
       <div>
         <table style="width: 100%; font-size: 0.9rem;">
@@ -114,11 +171,11 @@ function renderFilamentCard(filament) {
           </tr>
           <tr>
             <td style="color: var(--text-tertiary); padding: 0.25rem 0;">Purchase Price:</td>
-            <td style="text-align: right;"><strong>R${filament.price.toFixed(2)}</strong></td>
+            <td style="text-align: right;"><strong>${currencySymbol}${filament.price.toFixed(2)}</strong></td>
           </tr>
           <tr>
             <td style="color: var(--text-tertiary); padding: 0.25rem 0;">Cost per Gram:</td>
-            <td style="text-align: right;"><strong>R${filament.costPerGram.toFixed(2)}</strong></td>
+            <td style="text-align: right;"><strong>${currencySymbol}${filament.costPerGram.toFixed(2)}</strong></td>
           </tr>
           <tr>
             <td style="color: var(--text-tertiary); padding: 0.25rem 0;">Diameter:</td>

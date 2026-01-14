@@ -32,6 +32,7 @@
         <button class="nav-btn" data-section="filaments">Filaments</button>
         <button class="nav-btn" data-section="products">Products</button>
         <button class="nav-btn" data-section="reports">Reports</button>
+        <button class="nav-btn" data-section="settings">Settings</button>
       </nav>
     </div>
   </header>
@@ -248,8 +249,11 @@
             <h4 class="mt-2">Cost Assumptions</h4>
             <div class="grid grid-2">
               <div class="form-group">
-                <label class="form-label">Energy Cost (ZAR)</label>
-                <input type="number" class="form-input" name="energyCost" value="2.00" step="0.01">
+                <label class="form-label">Energy Cost</label>
+                <div class="flex gap-1">
+                    <input type="number" class="form-input" name="energyCost" value="2.00" step="0.01" id="energy-cost-input">
+                    <button type="button" class="btn btn-secondary" style="padding: 0 0.5rem;" onclick="calculateEnergyCost()" title="Calculate from print time and settings">⚡</button>
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Labor Cost (ZAR)</label>
@@ -337,11 +341,68 @@
         </div>
       </section>
 
+      <!-- Settings Section -->
+      <section id="settings" class="section">
+        <h1>Settings & Data</h1>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Application Configuration</h3>
+                </div>
+                <form id="settings-form" onsubmit="saveSettings(event)">
+                    <div class="form-group">
+                        <label class="form-label">Currency Symbol</label>
+                        <input type="text" class="form-input" name="currencySymbol" placeholder="$" required>
+                    </div>
+
+                    <h4 class="mt-2">Cost Assumptions</h4>
+                    <div class="form-group">
+                        <label class="form-label">Electricity Cost (per kWh)</label>
+                        <input type="number" class="form-input" name="electricityCost" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Default Printer Power (Watts)</label>
+                        <input type="number" class="form-input" name="printerPower" step="1" required>
+                        <small style="color: var(--text-tertiary);">Used to estimate energy costs</small>
+                    </div>
+
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Data Management</h3>
+                </div>
+                <div class="flex-col gap-2">
+                    <div>
+                        <h4>Backup Data</h4>
+                        <p style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 0.5rem;">Download a backup of all your filaments, products, and settings.</p>
+                        <button class="btn btn-secondary" onclick="exportData()">⬇️ Export to JSON</button>
+                    </div>
+
+                    <div style="padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+                        <h4>Restore Data</h4>
+                        <p style="color: var(--text-tertiary); font-size: 0.9rem; margin-bottom: 0.5rem;">Restore data from a backup file. <strong>Warning: This will overwrite current data.</strong></p>
+                        <label class="btn btn-secondary" style="display: inline-block; cursor: pointer;">
+                            ⬆️ Import from JSON
+                            <input type="file" accept=".json" onchange="importData(event)" style="display: none;">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </section>
+
     </div>
   </main>
 
   <!-- Scripts -->
   <script src="sheets-integration.js"></script>
+  <script src="settings-manager.js"></script>
   <script src="app.js"></script>
   <script src="filament-manager.js"></script>
   <script src="product-manager.js"></script>
