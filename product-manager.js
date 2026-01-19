@@ -45,6 +45,9 @@ function saveProduct(event) {
 
   saveProductData(product);
 
+  // Show success toast
+  showToast('success', 'Product Added!', `${product.name} has been saved`);
+
   // Sync to Google Sheets if configured
   if (typeof syncProductsToSheets === 'function') {
     syncProductsToSheets();
@@ -70,8 +73,14 @@ function deleteProduct(id) {
   }
 
   const products = getProducts();
+  const deletedProduct = products.find(p => p.id === id);
   const filtered = products.filter(p => p.id !== id);
   localStorage.setItem('products', JSON.stringify(filtered));
+
+  // Show success toast
+  if (deletedProduct) {
+    showToast('success', 'Product Deleted', `${deletedProduct.name} removed`);
+  }
 
   // Sync to Google Sheets if configured
   if (typeof syncProductsToSheets === 'function') {
@@ -99,10 +108,15 @@ function renderProductsList() {
   }
 
   container.innerHTML = `
-    <div class="grid grid-2">
+    <div class="grid grid-3">
       ${products.map(p => renderProductCard(p)).join('')}
     </div>
   `;
+
+  // Re-initialize Lucide icons for dynamically added content
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
 }
 
 // Render single product card
@@ -124,7 +138,7 @@ function renderProductCard(product) {
           <h3 class="card-title">${product.name}</h3>
           <span class="badge badge-success">${product.category}</span>
         </div>
-        <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">🗑️</button>
+        <button class="btn btn-danger" onclick="deleteProduct('${product.id}')"><i data-lucide="trash-2"></i></button>
       </div>
       <div>
         <h4 style="font-size: 0.9rem; margin-top: 1rem; color: var(--text-secondary);">Production</h4>

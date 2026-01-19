@@ -5,8 +5,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
     setupNavigation();
+    setupMobileMenu();
     loadSampleData();
     updateDashboard();
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 
     // Enable Google Sheets auto-sync if configured
     if (typeof enableAutoSync === 'function') {
@@ -29,20 +35,60 @@ function initializeApp() {
 
 // Setup navigation between sections
 function setupNavigation() {
-    const navButtons = document.querySelectorAll('.nav-btn');
+    const navButtons = document.querySelectorAll('.sidebar-nav-btn');
 
     navButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const sectionName = btn.dataset.section;
             navigateTo(sectionName);
+
+            // Close mobile menu after navigation
+            closeMobileMenu();
         });
     });
+}
+
+// Setup mobile menu toggle
+function setupMobileMenu() {
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', () => {
+            toggleMobileMenu();
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            closeMobileMenu();
+        });
+    }
+}
+
+// Toggle mobile menu
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+}
+
+// Close mobile menu
+function closeMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
 }
 
 // Navigate to a specific section
 function navigateTo(sectionName) {
     // Update active nav button
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    document.querySelectorAll('.sidebar-nav-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.section === sectionName) {
             btn.classList.add('active');
@@ -83,15 +129,27 @@ function updateDashboard() {
 
     // Calculate average margin (if products exist)
     if (products.length > 0) {
-        const avgMargin = products.reduce((sum, p) => {
+        let validMargins = 0;
+        const totalMargin = products.reduce((sum, p) => {
             const filament = filaments.find(f => f.id === p.filamentType);
-            if (filament) {
+            if (filament && filament.costPerGram) {
                 const calc = calculateCosts(p, filament);
-                return sum + calc.grossMarginPercent;
+                if (!isNaN(calc.grossMarginPercent)) {
+                    validMargins++;
+                    return sum + calc.grossMarginPercent;
+                }
             }
             return sum;
-        }, 0) / products.length;
-        document.getElementById('stat-avg-margin').textContent = `${avgMargin.toFixed(1)}%`;
+        }, 0);
+
+        if (validMargins > 0) {
+            const avgMargin = totalMargin / validMargins;
+            document.getElementById('stat-avg-margin').textContent = `${avgMargin.toFixed(1)}%`;
+        } else {
+            document.getElementById('stat-avg-margin').textContent = '0%';
+        }
+    } else {
+        document.getElementById('stat-avg-margin').textContent = '0%';
     }
 
     // Render recent items

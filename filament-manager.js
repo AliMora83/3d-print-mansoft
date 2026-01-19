@@ -38,6 +38,9 @@ function saveFilament(event) {
 
   saveFilamentData(filament);
 
+  // Show success toast
+  showToast('success', 'Filament Added!', `${filament.material} - ${filament.color} has been saved`);
+
   // Sync to Google Sheets if configured
   if (typeof syncFilamentsToSheets === 'function') {
     syncFilamentsToSheets();
@@ -63,8 +66,14 @@ function deleteFilament(id) {
   }
 
   const filaments = getFilaments();
+  const deletedFilament = filaments.find(f => f.id === id);
   const filtered = filaments.filter(f => f.id !== id);
   localStorage.setItem('filaments', JSON.stringify(filtered));
+
+  // Show success toast
+  if (deletedFilament) {
+    showToast('success', 'Filament Deleted', `${deletedFilament.material} - ${deletedFilament.color} removed`);
+  }
 
   // Sync to Google Sheets if configured
   if (typeof syncFilamentsToSheets === 'function') {
@@ -92,10 +101,15 @@ function renderFilamentsList() {
   }
 
   container.innerHTML = `
-    <div class="grid grid-2">
+    <div class="grid grid-3">
       ${filaments.map(f => renderFilamentCard(f)).join('')}
     </div>
   `;
+
+  // Re-initialize Lucide icons for dynamically added content
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
 }
 
 // Render single filament card
@@ -104,7 +118,7 @@ function renderFilamentCard(filament) {
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">${filament.material} - ${filament.color}</h3>
-        <button class="btn btn-danger" onclick="deleteFilament('${filament.id}')">🗑️</button>
+        <button class="btn btn-danger" onclick="deleteFilament('${filament.id}')"><i data-lucide="trash-2"></i></button>
       </div>
       <div>
         <table style="width: 100%; font-size: 0.9rem;">

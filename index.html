@@ -17,24 +17,71 @@
 
   <!-- jsPDF for PDF generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><i data-lucide="printer"></i></div>
+      <div class="sidebar-logo-text">3D ManSoft</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Overview</div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-nav-btn active" data-section="dashboard" id="nav-dashboard">
+          <span class="sidebar-nav-icon"><i data-lucide="layout-dashboard"></i></span>
+          <span>Dashboard</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Manage</div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-nav-btn" data-section="filaments" id="nav-filaments">
+          <span class="sidebar-nav-icon"><i data-lucide="package"></i></span>
+          <span>Filaments</span>
+        </button>
+        <button class="sidebar-nav-btn" data-section="products" id="nav-products">
+          <span class="sidebar-nav-icon"><i data-lucide="palette"></i></span>
+          <span>Products</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Analyze</div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-nav-btn" data-section="reports" id="nav-reports">
+          <span class="sidebar-nav-icon"><i data-lucide="trending-up"></i></span>
+          <span>Reports</span>
+        </button>
+      </nav>
+    </div>
+  </aside>
+
   <!-- Header -->
   <header class="header">
     <div class="header-content">
       <div class="logo">
-        <div class="logo-icon">🖨️</div>
-        <div class="logo-text">3D Print ManSoft</div>
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle menu">
+          <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+        </button>
+        <div class="logo-text">Spec System</div>
       </div>
-      <nav class="nav">
-        <button class="nav-btn active" data-section="dashboard">Dashboard</button>
-        <button class="nav-btn" data-section="filaments">Filaments</button>
-        <button class="nav-btn" data-section="products">Products</button>
-        <button class="nav-btn" data-section="reports">Reports</button>
-      </nav>
     </div>
   </header>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
 
   <!-- Main Content -->
   <main class="main">
@@ -43,48 +90,53 @@
       <!-- Dashboard Section -->
       <section id="dashboard" class="section active">
         <h1>Dashboard</h1>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value" id="stat-filaments">0</div>
-            <div class="stat-label">Filament Spools</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="stat-products">0</div>
-            <div class="stat-label">Products</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="stat-total-value">R0</div>
-            <div class="stat-label">Total Inventory</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="stat-avg-margin">0%</div>
-            <div class="stat-label">Avg. Margin</div>
-          </div>
-        </div>
 
-        <div class="grid grid-2">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Recent Filaments</h3>
-            </div>
+        <!-- Bento Grid Layout -->
+        <div class="bento-grid">
+          <!-- Stats - 4 small cards -->
+          <div class="bento-item bento-sm">
+            <div class="stat-label">Filament Spools</div>
+            <div class="stat-value" id="stat-filaments">0</div>
+          </div>
+          <div class="bento-item bento-sm">
+            <div class="stat-label">Products</div>
+            <div class="stat-value" id="stat-products">0</div>
+          </div>
+          <div class="bento-item bento-sm">
+            <div class="stat-label">Total Inventory</div>
+            <div class="stat-value" id="stat-total-value">R0</div>
+          </div>
+          <div class="bento-item bento-sm">
+            <div class="stat-label">Avg. Margin</div>
+            <div class="stat-value" id="stat-avg-margin">0%</div>
+          </div>
+
+          <!-- Recent Filaments - Medium card -->
+          <div class="bento-item bento-lg">
+            <h3 class="card-title">Recent Filaments</h3>
             <div id="recent-filaments"></div>
           </div>
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Recent Products</h3>
-            </div>
+
+          <!-- Recent Products - Medium card -->
+          <div class="bento-item bento-lg">
+            <h3 class="card-title">Recent Products</h3>
             <div id="recent-products"></div>
           </div>
-        </div>
 
-        <div class="card mt-2">
-          <div class="card-header">
+          <!-- Quick Actions - Full width -->
+          <div class="bento-item bento-full">
             <h3 class="card-title">Quick Actions</h3>
-          </div>
-          <div class="flex gap-2">
-            <button class="btn btn-primary" onclick="navigateTo('filaments')">➕ Add Filament</button>
-            <button class="btn btn-primary" onclick="navigateTo('products')">➕ Add Product</button>
-            <button class="btn btn-secondary" onclick="navigateTo('reports')">📊 Generate Report</button>
+            <div class="flex gap-2">
+              <button id="btn-add-filament-quick" class="btn btn-primary" onclick="navigateTo('filaments')">
+                <i data-lucide="plus"></i> Add Filament
+              </button>
+              <button id="btn-add-product-quick" class="btn btn-primary" onclick="navigateTo('products')">
+                <i data-lucide="plus"></i> Add Product
+              </button>
+              <button id="btn-generate-report-quick" class="btn btn-secondary" onclick="navigateTo('reports')">
+                <i data-lucide="file-bar-chart"></i> Generate Report
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -93,7 +145,9 @@
       <section id="filaments" class="section">
         <div class="flex-between mb-2">
           <h1>Filament Database</h1>
-          <button class="btn btn-primary" onclick="showAddFilamentForm()">➕ Add Filament</button>
+          <button id="btn-add-filament" class="btn btn-primary" onclick="showAddFilamentForm()">
+            <i data-lucide="plus"></i> Add Filament
+          </button>
         </div>
 
         <!-- Add Filament Form -->
@@ -154,8 +208,11 @@
                 placeholder="Any observations about this filament..."></textarea>
             </div>
             <div class="flex gap-1">
-              <button type="submit" class="btn btn-success">💾 Save Filament</button>
-              <button type="button" class="btn btn-secondary" onclick="hideAddFilamentForm()">Cancel</button>
+              <button id="btn-save-filament" type="submit" class="btn btn-success">
+                <i data-lucide="save"></i> Save Filament
+              </button>
+              <button id="btn-cancel-filament" type="button" class="btn btn-secondary"
+                onclick="hideAddFilamentForm()">Cancel</button>
             </div>
           </form>
         </div>
@@ -168,7 +225,9 @@
       <section id="products" class="section">
         <div class="flex-between mb-2">
           <h1>Product Database</h1>
-          <button class="btn btn-primary" onclick="showAddProductForm()">➕ Add Product</button>
+          <button class="btn btn-primary" onclick="showAddProductForm()">
+            <i data-lucide="plus"></i> Add Product
+          </button>
         </div>
 
         <!-- Add Product Form -->
@@ -284,7 +343,9 @@
             </div>
 
             <div class="flex gap-1">
-              <button type="submit" class="btn btn-success">💾 Save Product</button>
+              <button type="submit" class="btn btn-success">
+                <i data-lucide="save"></i> Save Product
+              </button>
               <button type="button" class="btn btn-secondary" onclick="hideAddProductForm()">Cancel</button>
             </div>
           </form>
@@ -321,7 +382,9 @@
                 <input type="number" class="form-input" name="monthlySpools" value="5" min="1">
               </div>
             </div>
-            <button type="submit" class="btn btn-primary">📊 Generate Report</button>
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="file-bar-chart"></i> Generate Report
+            </button>
           </form>
         </div>
 
@@ -330,7 +393,9 @@
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">Financial Analysis Report</h3>
-              <button class="btn btn-success" onclick="exportToPDF()">📄 Export PDF</button>
+              <button class="btn btn-success" onclick="exportToPDF()">
+                <i data-lucide="file-text"></i> Export PDF
+              </button>
             </div>
             <div id="report-content"></div>
           </div>
@@ -341,6 +406,7 @@
   </main>
 
   <!-- Scripts -->
+  <script src="toast.js"></script>
   <script src="sheets-integration.js"></script>
   <script src="app.js"></script>
   <script src="filament-manager.js"></script>
