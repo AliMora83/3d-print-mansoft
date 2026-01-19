@@ -1,5 +1,28 @@
 // Filament Manager
-// Handles CRUD operations for filament spools
+// Handles CRUD operations for filament spools using Firestore
+
+// Real-time subscription to filaments
+let filamentsUnsubscribe = null;
+
+// Initialize real-time listener when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof subscribeToFilaments === 'function') {
+    filamentsUnsubscribe = subscribeToFilaments((filaments) => {
+      // Store in memory for quick access
+      window.cachedFilaments = filaments;
+      // Update UI if on filaments page
+      if (document.getElementById('filaments').classList.contains('active')) {
+        renderFilamentsList();
+      }
+      // Update dashboard if on dashboard page
+      if (document.getElementById('dashboard').classList.contains('active')) {
+        updateDashboard();
+      }
+      // Update product filament dropdown
+      updateProductFilamentDropdown();
+    });
+  }
+});
 
 // Show add filament form
 function showAddFilamentForm() {
@@ -13,14 +36,18 @@ function hideAddFilamentForm() {
 }
 
 // Save filament (from form submission)
-function saveFilament(event) {
+async function saveFilament(event) {
   event.preventDefault();
 
   const form = event.target;
   const formData = new FormData(form);
+  const saveButton = form.querySelector('button[type="submit"]');
+
+  // Disable button and show loading state
+  saveButton.disabled = true;
+  saveButton.innerHTML = '<i data-lucide="loader"></i> Saving...';
 
   const filament = {
-    id: generateId(),
     material: formData.get('material'),
     color: formData.get('color'),
     spoolSize: parseFloat(formData.get('spoolSize')),
@@ -36,52 +63,48 @@ function saveFilament(event) {
   // Calculate cost per gram
   filament.costPerGram = filament.price / filament.spoolSize;
 
-  saveFilamentData(filament);
+  try {
+    await addFilament(filament);
 
-  // Show success toast
-  showToast('success', 'Filament Added!', `${filament.material} - ${filament.color} has been saved`);
+    // Show success toast
+    showToast('success', 'Filament Added!', `${filament.material} - ${filament.color} has been saved`);
 
-  // Sync to Google Sheets if configured
-  if (typeof syncFilamentsToSheets === 'function') {
-    syncFilamentsToSheets();
+    form.reset();
+    hideAddFilamentForm();
+  } catch (error) {
+    console.error('Error saving filament:', error);
+    showToast('error', 'Save Failed', 'Could not save filament. Please try again.');
+  } finally {
+    // Re-enable button
+    saveButton.disabled = false;
+    saveButton.innerHTML = '<i data-lucide="save"></i> Save Filament';
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   }
-
-  form.reset();
-  hideAddFilamentForm();
-  renderFilamentsList();
-  updateDashboard();
-}
-
-// Save filament data to localStorage
-function saveFilamentData(filament) {
-  const filaments = getFilaments();
-  filaments.unshift(filament); // Add to beginning
-  localStorage.setItem('filaments', JSON.stringify(filaments));
 }
 
 // Delete filament
-function deleteFilament(id) {
+async function deleteFilamentHandler(id) {
   if (!confirm('Are you sure you want to delete this filament?')) {
     return;
   }
 
   const filaments = getFilaments();
   const deletedFilament = filaments.find(f => f.id === id);
-  const filtered = filaments.filter(f => f.id !== id);
-  localStorage.setItem('filaments', JSON.stringify(filtered));
 
-  // Show success toast
-  if (deletedFilament) {
-    showToast('success', 'Filament Deleted', `${deletedFilament.material} - ${deletedFilament.color} removed`);
+  try {
+    // Call Firestore service to delete
+    await deleteFilament(id);
+
+    // Show success toast
+    if (deletedFilament) {
+      showToast('success', 'Filament Deleted', `${deletedFilament.material} - ${deletedFilament.color} removed`);
+    }
+  } catch (error) {
+    console.error('Error deleting filament:', error);
+    showToast('error', 'Delete Failed', 'Could not delete filament. Please try again.');
   }
-
-  // Sync to Google Sheets if configured
-  if (typeof syncFilamentsToSheets === 'function') {
-    syncFilamentsToSheets();
-  }
-
-  renderFilamentsList();
-  updateDashboard();
 }
 
 // Render filaments list
@@ -118,7 +141,7 @@ function renderFilamentCard(filament) {
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">${filament.material} - ${filament.color}</h3>
-        <button class="btn btn-danger" onclick="deleteFilament('${filament.id}')"><i data-lucide="trash-2"></i></button>
+        <button class="btn btn-danger" onclick="deleteFilamentHandler('${filament.id}')"><i data-lucide="trash-2"></i></button>
       </div>
       <div>
         <table style="width: 100%; font-size: 0.9rem;">
@@ -170,8 +193,21 @@ function updateProductFilamentDropdown() {
   const filaments = getFilaments();
   const select = document.getElementById('product-filament-type');
 
+  if (!select) return;
+
   select.innerHTML = '<option value="">Select filament...</option>' +
     filaments.map(f => `
       <option value="${f.id}">${f.material} - ${f.color} (${f.spoolSize}g)</option>
     `).join('');
+}
+
+// Helper function to get filaments from cache or localStorage fallback
+function getFilaments() {
+  // Try to get from real-time cache first
+  if (window.cachedFilaments) {
+    return window.cachedFilaments;
+  }
+
+  // Fallback to localStorage during migration
+  return JSON.parse(localStorage.getItem('filaments') || '[]');
 }

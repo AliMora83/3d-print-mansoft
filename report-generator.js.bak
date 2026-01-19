@@ -62,9 +62,7 @@ function generateReport(event) {
   };
 
   // Render report
-
-  // Save report to Firestore
-  saveReportToFirestore(currentReportData); renderReport();
+  renderReport();
 
   // Show report output
   document.getElementById('report-output').classList.remove('hidden');
@@ -112,7 +110,7 @@ function renderReport() {
             <tr><td>Selling Price:</td><td><strong>R${s.price.toFixed(2)}</strong></td></tr>
             <tr><td>Gross Profit:</td><td>R${s.grossProfit.toFixed(2)} | Margin: ${s.grossMarginPercent.toFixed(1)}%</td></tr>
             <tr><td>Net Profit:</td><td><strong style="color: var(--success);">R${s.netProfit.toFixed(2)}</strong> | Margin: <strong style="color: var(--success);">${s.netMarginPercent.toFixed(1)}%</strong></td></tr>
-            <tr><td>Per ${currentReportData.monthlySpools} Spool${currentReportData.monthlySpools > 1 ? 's' : ''} (${s.unitsPerSpool * currentReportData.monthlySpools} units):</td><td>R${(s.unitsPerSpool * currentReportData.monthlySpools * s.price).toFixed(2)} | Profit: R${(s.spoolNetProfit * currentReportData.monthlySpools).toFixed(2)}</td></tr>
+            <tr><td>Per Spool (${s.unitsPerSpool} units):</td><td>R${(s.unitsPerSpool * s.price).toFixed(2)} | Profit: R${s.spoolNetProfit.toFixed(2)}</td></tr>
           </table>
         </div>
       `).join('')}
@@ -343,7 +341,6 @@ async function saveReportToFirestore(reportData) {
       filamentId: reportData.filament.id,
       monthlySpools: reportData.monthlySpools,
       netProfit: reportData.production.monthly.netProfit,
-      grossProfit: reportData.production.monthly.grossProfit,
       revenue: reportData.production.monthly.revenue,
       generatedDate: reportData.generatedDate,
       timestamp: firebase.firestore.Timestamp.now()
@@ -409,9 +406,9 @@ function renderPastReports(reports) {
           <div style="padding: 0.5rem 0;">
             <table style="width: 100%; font-size: 0.85rem;">
               <tr><td style="color: var(--text-tertiary);">Monthly Revenue:</td><td style="text-align: right;"><strong>R${report.revenue.toFixed(2)}</strong></td></tr>
-              <tr><td style="color: var(--text-tertiary);">Gross Profit:</td><td style="text-align: right;"><strong style="color: var(--success);">R${report.grossProfit ? report.grossProfit.toFixed(2) : 'N/A'}</strong></td></tr>
               <tr><td style="color: var(--text-tertiary);">Net Profit:</td><td style="text-align: right;"><strong style="color: var(--success);">R${report.netProfit.toFixed(2)}</strong></td></tr>
               <tr><td style="color: var(--text-tertiary);">Spools/Month:</td><td style="text-align: right;">${report.monthlySpools}</td></tr>
+              <tr><td style="color: var(--text-tertiary);">Generated:</td><td style="text-align: right;">${report.generatedDate}</td></tr>
             </table>
           </div>
         </div>
@@ -422,7 +419,7 @@ function renderPastReports(reports) {
 }
 
 // Delete past report
-window.deletePastReport = async function (reportId) {
+async function deletePastReport(reportId) {
   if (!confirm('Delete this report?')) return;
   try {
     if (typeof db !== 'undefined' && db) {
@@ -437,7 +434,6 @@ window.deletePastReport = async function (reportId) {
       showToast('success', 'Report Deleted', 'Past report removed');
     }
   } catch (error) {
-    console.error('Error deleting report:', error);
     showToast('error', 'Delete Failed', 'Could not delete report');
   }
 }

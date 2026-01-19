@@ -1,5 +1,26 @@
 // Product Manager
-// Handles CRUD operations for 3D printed products
+// Handles CRUD operations for 3D printed products using Firestore
+
+// Real-time subscription to products
+let productsUnsubscribe = null;
+
+// Initialize real-time listener when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof subscribeToProducts === 'function') {
+    productsUnsubscribe = subscribeToProducts((products) => {
+      // Store in memory for quick access
+      window.cachedProducts = products;
+      // Update UI if on products page
+      if (document.getElementById('products').classList.contains('active')) {
+        renderProductsList();
+      }
+      // Update dashboard if on dashboard page
+      if (document.getElementById('dashboard').classList.contains('active')) {
+        updateDashboard();
+      }
+    });
+  }
+});
 
 // Show add product form
 function showAddProductForm() {
@@ -14,14 +35,18 @@ function hideAddProductForm() {
 }
 
 // Save product (from form submission)
-function saveProduct(event) {
+async function saveProduct(event) {
   event.preventDefault();
 
   const form = event.target;
   const formData = new FormData(form);
+  const saveButton = form.querySelector('button[type="submit"]');
+
+  // Disable button and show loading state
+  saveButton.disabled = true;
+  saveButton.innerHTML = '<i data-lucide="loader"></i> Saving...';
 
   const product = {
-    id: generateId(),
     name: formData.get('name'),
     category: formData.get('category'),
     length: parseFloat(formData.get('length') || 0),
@@ -43,52 +68,48 @@ function saveProduct(event) {
     dateAdded: new Date().toISOString()
   };
 
-  saveProductData(product);
+  try {
+    await addProduct(product);
 
-  // Show success toast
-  showToast('success', 'Product Added!', `${product.name} has been saved`);
+    // Show success toast
+    showToast('success', 'Product Added!', `${product.name} has been saved`);
 
-  // Sync to Google Sheets if configured
-  if (typeof syncProductsToSheets === 'function') {
-    syncProductsToSheets();
+    form.reset();
+    hideAddProductForm();
+  } catch (error) {
+    console.error('Error saving product:', error);
+    showToast('error', 'Save Failed', 'Could not save product. Please try again.');
+  } finally {
+    // Re-enable button
+    saveButton.disabled = false;
+    saveButton.innerHTML = '<i data-lucide="save"></i> Save Product';
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   }
-
-  form.reset();
-  hideAddProductForm();
-  renderProductsList();
-  updateDashboard();
-}
-
-// Save product data to localStorage
-function saveProductData(product) {
-  const products = getProducts();
-  products.unshift(product); // Add to beginning
-  localStorage.setItem('products', JSON.stringify(products));
 }
 
 // Delete product
-function deleteProduct(id) {
+async function deleteProductHandler(id) {
   if (!confirm('Are you sure you want to delete this product?')) {
     return;
   }
 
   const products = getProducts();
   const deletedProduct = products.find(p => p.id === id);
-  const filtered = products.filter(p => p.id !== id);
-  localStorage.setItem('products', JSON.stringify(filtered));
 
-  // Show success toast
-  if (deletedProduct) {
-    showToast('success', 'Product Deleted', `${deletedProduct.name} removed`);
+  try {
+    // Call Firestore service to delete
+    await deleteProductFromFirestore(id);
+
+    // Show success toast
+    if (deletedProduct) {
+      showToast('success', 'Product Deleted', `${deletedProduct.name} removed`);
+    }
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    showToast('error', 'Delete Failed', 'Could not delete product. Please try again.');
   }
-
-  // Sync to Google Sheets if configured
-  if (typeof syncProductsToSheets === 'function') {
-    syncProductsToSheets();
-  }
-
-  renderProductsList();
-  updateDashboard();
 }
 
 // Render products list
@@ -138,7 +159,7 @@ function renderProductCard(product) {
           <h3 class="card-title">${product.name}</h3>
           <span class="badge badge-success">${product.category}</span>
         </div>
-        <button class="btn btn-danger" onclick="deleteProduct('${product.id}')"><i data-lucide="trash-2"></i></button>
+        <button class="btn btn-danger" onclick="deleteProductHandler('${product.id}')"><i data-lucide="trash-2"></i></button>
       </div>
       <div>
         <h4 style="font-size: 0.9rem; margin-top: 1rem; color: var(--text-secondary);">Production</h4>
@@ -201,4 +222,15 @@ function renderProductCard(product) {
       </div>
     </div>
   `;
+}
+
+// Helper function to get products from cache or localStorage fallback
+function getProducts() {
+  // Try to get from real-time cache first
+  if (window.cachedProducts) {
+    return window.cachedProducts;
+  }
+
+  // Fallback to localStorage during migration
+  return JSON.parse(localStorage.getItem('products') || '[]');
 }

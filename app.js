@@ -13,11 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
-
-    // Enable Google Sheets auto-sync if configured
-    if (typeof enableAutoSync === 'function') {
-        enableAutoSync();
-    }
 });
 
 // Initialize application
@@ -250,16 +245,6 @@ function loadSampleData() {
 // Utility: Generate unique ID
 function generateId() {
     return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
-// Utility: Get filaments from localStorage
-function getFilaments() {
-    return JSON.parse(localStorage.getItem('filaments') || '[]');
-}
-
-// Utility: Get products from localStorage
-function getProducts() {
-    return JSON.parse(localStorage.getItem('products') || '[]');
 }
 
 // Utility: Format currency
